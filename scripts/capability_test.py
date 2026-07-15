@@ -448,7 +448,18 @@ def main() -> int:
     preferred_library = select_preferred_library(pyswisseph_test, skyfield_test)
 
     api_results = [httpbin_test, *api_tests]
-    persisted_downloads = all(result.get("saved_file_exists") for result in api_results if result.get("saved_to"))
+    successful_downloads = [
+        result
+        for result in api_results
+        if result.get("status_code") == 200 and result.get("saved_to")
+    ]
+    if successful_downloads:
+        persisted_downloads: bool | str = all(
+            Path(result["saved_to"]).exists() and Path(result["saved_to"]).stat().st_size > 0
+            for result in successful_downloads
+        )
+    else:
+        persisted_downloads = "not tested; no successful downloads"
 
     data = {
         "assumptions": [
